@@ -35,7 +35,7 @@ export function AssistantDock() {
             <span className="absolute inset-0 rounded-full bg-primary/30 animate-pulse-ring" aria-hidden="true" />
           ) : null}
           <span className="absolute inset-1 rounded-full border border-white/25" aria-hidden="true" />
-          <WheatCoinIcon className="relative h-6 w-6" aria-hidden="true" />
+          <WheatCoinIcon className="relative h-8 w-8 scale-110" aria-hidden="true" />
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-black text-accent-foreground shadow">
             AI
           </span>
