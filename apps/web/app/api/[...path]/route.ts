@@ -33,11 +33,13 @@ async function forward(request: NextRequest, context: RouteContext) {
     });
 
     const responseHeaders = new Headers();
-    for (const key of ["content-type", "x-request-id", "retry-after"]) {
+    for (const key of ["content-type", "x-request-id", "retry-after", "cache-control"]) {
       const value = upstream.headers.get(key);
       if (value) responseHeaders.set(key, value);
     }
-    responseHeaders.set("cache-control", "no-store");
+    if (!responseHeaders.has("cache-control")) {
+      responseHeaders.set("cache-control", "no-store");
+    }
 
     return new NextResponse(upstream.body, {
       status: upstream.status,

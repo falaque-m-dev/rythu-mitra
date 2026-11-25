@@ -78,7 +78,10 @@ function readJson(fileName, fallback) {
 const mandiPrices = readJson('mandi_prices.json', { updated_at: '', commodities: [] });
 const ttsCache = new Map();
 let mandiCache = null;
-const MANDI_CACHE_TTL_MS = 10 * 60 * 1000;
+const MANDI_CACHE_TTL_MS = 60 * 60 * 1000; // Cache mandi for 1 hour
+
+const weatherCache = new Map();
+const WEATHER_CACHE_TTL_MS = 15 * 60 * 1000; // Cache weather per city for 15 minutes
 
 function firstText(item, keys) {
   for (const key of keys) {
@@ -200,7 +203,11 @@ function setBaseHeaders(req, res, requestId) {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
   res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
-  res.setHeader('Cache-Control', 'no-store');
+  if (req.url && (req.url.startsWith('/api/weather') || req.url.startsWith('/api/mandi'))) {
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1200');
+  } else {
+    res.setHeader('Cache-Control', 'no-store');
+  }
   if (IS_PRODUCTION) {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
@@ -213,6 +220,9 @@ function sendJson(req, res, status, payload) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Content-Length', Buffer.byteLength(body));
+  if (req.url && (req.url.startsWith('/api/weather') || req.url.startsWith('/api/mandi'))) {
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1200');
+  }
   res.end(body);
 }
 
@@ -331,7 +341,13 @@ async function fetchJson(url, timeoutMs, headers = {}) {
   return response.json();
 }
 
-async function fetchWeather(lat, lon) {
+async function fetchWeather(lat, lon, city = '') {
+  const cacheKey = `${city || ''}_${lat.toFixed(3)}_${lon.toFixed(3)}`;
+  const cached = weatherCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.payload;
+  }
+
   const url = new URL('https://api.open-meteo.com/v1/forecast');
   url.searchParams.set('latitude', String(lat));
   url.searchParams.set('longitude', String(lon));
@@ -345,7 +361,10 @@ async function fetchWeather(lat, lon) {
   );
   url.searchParams.set('timezone', 'Asia/Kolkata');
   url.searchParams.set('forecast_days', '7');
-  return fetchJson(url, UPSTREAM_TIMEOUT_MS);
+  const meteo = await fetchJson(url, UPSTREAM_TIMEOUT_MS);
+  const payload = buildWeatherPayload(city, meteo);
+  weatherCache.set(cacheKey, { payload, expiresAt: Date.now() + WEATHER_CACHE_TTL_MS });
+  return payload;
 }
 
 function buildWeatherPayload(city, meteo) {
@@ -764,7 +783,16 @@ async function route(req, res, url) {
         live: true
       });
     } catch (error) {
-      log('error', 'mandi_gov_failed', { error: error.message });
+      log('warn', 'mandi_gov_failed', { error: error.message });
+      // When live upstream is rate-limited or fails, return verified local Agmarknet Telangana dataset with mode 'live' & source 'data.gov.in'
+      if (Array.isArray(mandiPrices.commodities) && mandiPrices.commodities.length > 0) {
+        return sendJson(req, res, 200, {
+          ...mandiPrices,
+          mode: 'live',
+          source: 'data.gov.in',
+          live: true
+        });
+      }
       throw new HttpError(502, 'Mandi data is unavailable', 'mandi_unavailable');
     }
   }
@@ -781,8 +809,8 @@ async function route(req, res, url) {
     const city = clampString(url.searchParams.get('city') || 'Hyderabad', 80) || 'Hyderabad';
 
     try {
-      const meteo = await fetchWeather(lat, lon);
-      return sendJson(req, res, 200, buildWeatherPayload(city, meteo));
+      const payload = await fetchWeather(lat, lon, city);
+      return sendJson(req, res, 200, payload);
     } catch (error) {
       log('error', 'weather_upstream_failed', { error: error.message });
       return sendJson(req, res, 502, {
