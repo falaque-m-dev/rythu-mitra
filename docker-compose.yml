@@ -1,0 +1,55 @@
+services:
+  api:
+    container_name: rythu-mitra-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rythu-mitra-api:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash}
+      - GEMINI_TTS_MODEL=${GEMINI_TTS_MODEL:-gemini-3.8-flash-tts}
+      - GEMINI_TTS_VOICE=${GEMINI_TTS_VOICE:-Kore}
+      - TTS_MAX_CHARS=${TTS_MAX_CHARS:-1200}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3100}
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels:
+      - "app=rythu-mitra"
+      - "project=inspire-manak"
+
+  web:
+    container_name: rythu-mitra-web
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3100}
+    image: rythu-mitra-web:latest
+    ports:
+      - "3100:3100"
+    environment:
+      - PORT=3100
+      - HOSTNAME=0.0.0.0
+      - NODE_ENV=production
+      - API_ORIGIN=http://api:3000
+      - API_TIMEOUT_MS=60000
+    depends_on:
+      - api
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "app=rythu-mitra"
+      - "project=inspire-manak"

@@ -1,0 +1,25 @@
+{
+  "name": "rythu-mitra",
+  "version": "1.0.0",
+  "description": "Rythu Mitra - AI Agricultural Assistant & Crop Doctor for Farmers",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/",
+    "docker:build": "docker build -t rythu-mitra:latest .",
+    "docker:run": "docker compose up -d"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "agriculture",
+    "ai",
+    "crop-disease-detection",
+    "telugu-voice",
+    "inspire-manak",
+    "smart-farming"
+  ],
+  "author": "Newgen High School - INSPIRE MANAK Project",
+  "license": "MIT"
+}

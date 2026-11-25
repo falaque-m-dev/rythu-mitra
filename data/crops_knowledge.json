@@ -1,0 +1,149 @@
+{
+  "crops": [
+    {
+      "id": "chilli",
+      "name_en": "Chilli / Red Pepper",
+      "name_te": "మిరప (Mirapa)",
+      "season": "Kharif & Rabi",
+      "soil": "Well-drained black clay or red loamy soil with pH 6.5 - 7.5",
+      "fertilizer": {
+        "basal": "NPK 40:60:40 kg/acre + 10 tons FYM (Farmyard manure)",
+        "top_dressing": "40 kg Nitrogen in 3 splits at 30, 60, and 90 days after transplanting",
+        "organic": "Neem cake 100 kg/acre at soil preparation"
+      },
+      "diseases": [
+        {
+          "id": "chilli_leaf_curl",
+          "name_en": "Chilli Leaf Curl Virus",
+          "name_te": "మిరప ఆకు ముడత వైరస్",
+          "causative_agent": "Virus transmitted by Whiteflies (Bemisia tabaci) and Thrips",
+          "severity": "High",
+          "symptoms_en": "Upward or downward curling of leaves, leaf puckering, stunted plant growth, reduced fruit setting.",
+          "symptoms_te": "ఆకులు పైకి లేదా క్రిందికి ముడుచుకుపోవడం, మొక్క గిడసబారడం, పూత పిందె రాలిపోవడం.",
+          "organic_cure_en": "Spray Neem oil (5ml/L) or 5% Neem Seed Kernel Extract (NSKE). Apply Jeevamrutham every 15 days. Use yellow and blue sticky traps (15-20 per acre) to control vector insects.",
+          "organic_cure_te": "వేప నూనె 5 మి.లీ లీటరు నీటికి కలిపి పిచికారీ చేయాలి లేదా జీవామృతం ప్రతి 15 రోజులకు ఒకసారి పిచికారీ చేయాలి. పసుపు మరియు నీలి రంగు జిగురు అట్టలు (ఎకరానికి 15-20) అమర్చాలి.",
+          "chemical_cure_en": "Spray Fipronil 5% SC @ 2ml/L or Diafenthiuron 50% WP @ 1.25g/L or Acetamiprid 20% SP @ 0.2g/L. Repeat after 10-12 days if vector population persists.",
+          "chemical_cure_te": "ఫిప్రోనిల్ 5% SC @ 2 మి.లీ లేదా డయాఫెంథియురాన్ 50% WP @ 1.25 గ్రా లేదా ఎసిటామైప్రిడ్ 20% SP @ 0.2 గ్రా లీటరు నీటికి కలిపి పిచికారీ చేయాలి.",
+          "prevention_en": "Uproot and destroy severely infected plants. Avoid excessive nitrogen fertilizers. Keep field borders weed-free.",
+          "prevention_te": "తీవ్రంగా సోకిన మొక్కలను పీకి నాశనం చేయాలి. అధిక నత్రజని వాడకూడదు. పొలం గట్లపై కలుపు మొక్కలను తొలగించాలి."
+        },
+        {
+          "id": "chilli_anthracnose",
+          "name_en": "Anthracnose / Fruit Rot",
+          "name_te": "మిరప కాయ కుళ్లు తెగులు (ఆంథ్రాక్నోస్)",
+          "causative_agent": "Fungus (Colletotrichum capsici)",
+          "severity": "Medium",
+          "symptoms_en": "Dark sunken circular spots on fruits, die-back of young twigs starting from top.",
+          "symptoms_te": "కాయలపై నల్లటి గుండ్రని మచ్చలు, కొమ్మలు పైనుండి ఎండిపోవడం (డై-బ్యాక్).",
+          "organic_cure_en": "Spray Pseudomonas fluorescens @ 10g/L or copper-based bio-fungicides.",
+          "organic_cure_te": "సూడోమోనాస్ ఫ్లోరోసెన్స్ 10 గ్రా లీటరు నీటికి కలిపి పిచికారీ చేయాలి.",
+          "chemical_cure_en": "Spray Azoxystrobin 23% SC @ 1ml/L or Difenoconazole 25% EC @ 1ml/L or Mancozeb 75% WP @ 2.5g/L.",
+          "chemical_cure_te": "అజోక్సిస్ట్రోబిన్ 23% SC @ 1 మి.లీ లేదా డైఫెనోకోనజోల్ 25% EC @ 1 మి.లీ లేదా మాంకోజెబ్ 2.5 గ్రా లీటరు నీటికి కలిపి పిచికారీ చేయాలి.",
+          "prevention_en": "Collect and destroy fallen infected fruits. Ensure good field drainage.",
+          "prevention_te": "రాలిన తెగులు సోకిన కాయలను ఏరి నాశనం చేయాలి. నీటి నిల్వ లేకుండా చూసుకోవాలి."
+        }
+      ]
+    },
+    {
+      "id": "paddy",
+      "name_en": "Paddy / Rice",
+      "name_te": "వరి (Vari)",
+      "season": "Kharif (Sarva) & Rabi (Dalwa)",
+      "soil": "Clayey loam with high water holding capacity",
+      "fertilizer": {
+        "basal": "NPK 30:24:16 kg/acre (apply entire P at puddling)",
+        "top_dressing": "Nitrogen in 3 equal splits: basal, active tillering (21-25 DAT), and panicle initiation (40-45 DAT)",
+        "zinc": "Zinc sulphate 20 kg/acre once in 3 seasons"
+      },
+      "diseases": [
+        {
+          "id": "paddy_blast",
+          "name_en": "Rice Blast Disease",
+          "name_te": "వరి అగ్గి తెగులు (బ్లాస్ట్)",
+          "causative_agent": "Fungus (Magnaporthe oryzae)",
+          "severity": "High",
+          "symptoms_en": "Spindle-shaped lesions with grey/ash center and brownish-red borders on leaves and neck nodes.",
+          "symptoms_te": "ఆకులపై కంటి లేదా కండె ఆకారపు మచ్చలు, మధ్యలో బూడిద రంగు అంచులు గోధుమ రంగులో ఉంటాయి.",
+          "organic_cure_en": "Spray Cow urine (10%) fermented with neem leaves or Trichoderma harzianum @ 5g/L.",
+          "organic_cure_te": "గోమూత్రం 10% ద్రావణం లేదా ట్రైకోడెర్మా హర్జియానం 5 గ్రా లీటరు నీటికి కలిపి పిచికారీ చేయాలి.",
+          "chemical_cure_en": "Spray Tricyclazole 75% WP @ 0.6g/L or Isoprothiolane 40% EC @ 1.5ml/L or Kasugamycin 3% SL @ 2.5ml/L.",
+          "chemical_cure_te": "ట్రైసైక్లాజోల్ 75% WP @ 0.6 గ్రా లేదా ఐసోప్రోథియోలేన్ 40% EC @ 1.5 మి.లీ లేదా కాసుగామైసిన్ @ 2.5 మి.లీ లీటరు నీటికి పిచికారీ చేయాలి.",
+          "prevention_en": "Avoid excessive urea in cloudy/humid weather. Maintain thin water layer, do not let field dry out completely.",
+          "prevention_te": "మబ్బులు ఉన్నప్పుడు అధిక యూరియా వాడరాదు. పొలంలో తగినంత తేమ ఉండేలా చూడాలి."
+        },
+        {
+          "id": "paddy_bacterial_blight",
+          "name_en": "Bacterial Leaf Blight (BLB)",
+          "name_te": "వరి బ్యాక్టీరియా ఆకు ఎండు తెగులు",
+          "causative_agent": "Bacterium (Xanthomonas oryzae)",
+          "severity": "High",
+          "symptoms_en": "Wavy yellow to translucent stripes starting from leaf tips, leaf drying like straw.",
+          "symptoms_te": "ఆకు కొనల నుండి క్రిందికి అలల వంటి పసుపు చారలు ఏర్పడి ఆకులు ఎండిపోవడం.",
+          "organic_cure_en": "Spray fresh cow dung slurry extract (20g/L) filtered through fine cloth.",
+          "organic_cure_te": "తాజా ఆవుపేడ ఊట ద్రావణాన్ని బట్టలో వడకట్టి పిచికారీ చేయాలి.",
+          "chemical_cure_en": "Spray Copper Oxychloride 50% WP @ 2.5g/L mixed with Streptocycline @ 0.1g/L (1g in 10L water).",
+          "chemical_cure_te": "కాపర్ ఆక్సిక్లోరైడ్ 2.5 గ్రా మరియు స్ట్రెప్టోసైక్లిన్ 0.1 గ్రా (1 గ్రాము 10 లీటర్ల నీటికి) కలిపి పిచికారీ చేయాలి.",
+          "prevention_en": "Stop nitrogen application immediately on noticing symptoms. Drain excess water from infected field.",
+          "prevention_te": "లక్షణాలు కనిపించగానే యూరియా వేయడం ఆపాలి. పొలం నుండి నీటిని తీసివేయాలి."
+        }
+      ]
+    },
+    {
+      "id": "cotton",
+      "name_en": "Cotton",
+      "name_te": "ప్రత్తి (Pratti)",
+      "season": "Kharif",
+      "soil": "Deep black cotton soils (Vertisols) with good drainage",
+      "fertilizer": {
+        "basal": "NPK 48:24:24 kg/acre",
+        "top_dressing": "Nitrogen applied in 3 splits at 30, 60, and 90 DAS",
+        "micronutrients": "Foliar spray of 1% Magnesium Sulphate + 0.5% Boron at flowering"
+      },
+      "diseases": [
+        {
+          "id": "cotton_bollworm",
+          "name_en": "Pink Bollworm Infestation",
+          "name_te": "గులాబీ రంగు కాయ తొలుచు పురుగు",
+          "causative_agent": "Insect Pest (Pectinophora gossypiella)",
+          "severity": "High",
+          "symptoms_en": "Rosetted flowers, exit holes in bolls, stained lint, premature boll opening.",
+          "symptoms_te": "రోసెట్ పువ్వులు (ముడుచుకున్న పూలు), కాయలపై రంధ్రాలు, పత్తి రంగు మారి నాణ్యత దెబ్బతినడం.",
+          "organic_cure_en": "Install Pheromone traps @ 5-8/acre. Release Trichogramma parasitoids @ 60,000/acre. Spray 5% NSKE.",
+          "organic_cure_te": "ఎకరానికి 5-8 లింగాకర్షక బుట్టలు అమర్చాలి. ట్రైకోగ్రామా పరాన్నజీవులను విడుదల చేయాలి. 5% వేప గింజల కషాయం పిచికారీ చేయాలి.",
+          "chemical_cure_en": "Spray Chlorantraniliprole 18.5% SC @ 0.3ml/L or Emamectin Benzoate 5% SG @ 0.4g/L or Profenofos 50% EC @ 2ml/L.",
+          "chemical_cure_te": "క్లోరాంట్రానిలిప్రోల్ 18.5% SC @ 0.3 మి.లీ లేదా ఎమామెక్టిన్ బెంజోయేట్ @ 0.4 గ్రా లేదా ప్రొఫెనోఫాస్ @ 2 మి.లీ లీటరు నీటికి కలపాలి.",
+          "prevention_en": "Avoid extending the crop season beyond January. Collect and burn dropped squares and bolls.",
+          "prevention_te": "జనవరి దాటిన తర్వాత పంటను పొడిగించరాదు. రాలిన మొగ్గలు, కాయలను ఏరి నాశనం చేయాలి."
+        }
+      ]
+    },
+    {
+      "id": "tomato",
+      "name_en": "Tomato",
+      "name_te": "టమోటా (Tomato)",
+      "season": "Year round (Kharif, Rabi, Summer)",
+      "soil": "Sandy loam to clay loam with good drainage",
+      "fertilizer": {
+        "basal": "NPK 30:40:30 kg/acre + 10t FYM",
+        "top_dressing": "Nitrogen in 3 splits at 25, 45, and 60 DAT"
+      },
+      "diseases": [
+        {
+          "id": "tomato_early_blight",
+          "name_en": "Early Blight",
+          "name_te": "టమోటా ముందస్తు ఆకుమచ్చ తెగులు",
+          "causative_agent": "Fungus (Alternaria solani)",
+          "severity": "Medium",
+          "symptoms_en": "Concentric dark brown rings ('target board' pattern) on lower leaves, defoliation.",
+          "symptoms_te": "క్రింది ఆకులపై వలయాల వంటి (టార్గెట్ బోర్డు) గోధుమ రంగు మచ్చలు, ఆకులు రాలిపోవడం.",
+          "organic_cure_en": "Neem oil spray (5ml/L) or copper soap biopesticide.",
+          "organic_cure_te": "వేప నూనె 5 మి.లీ లీటరు నీటికి కలిపి పిచికారీ చేయాలి.",
+          "chemical_cure_en": "Spray Mancozeb 75% WP @ 2.5g/L or Chlorothalonil 75% WP @ 2g/L or Azoxystrobin + Difenoconazole @ 1ml/L.",
+          "chemical_cure_te": "మాంకోజెబ్ 2.5 గ్రా లేదా క్లోరోథలోనిల్ 2 గ్రా లేదా అజోక్సిస్ట్రోబిన్ + డైఫెనోకోనజోల్ 1 మి.లీ లీటరు నీటికి పిచికారీ చేయాలి.",
+          "prevention_en": "Mulch the soil surface. Stake plants to keep leaves off the ground. Avoid overhead irrigation.",
+          "prevention_te": "మల్చింగ్ చేయాలి. మొక్కలను కర్రలతో కట్టాలి. పైనుండి నీరు చిలకరించకుండా బిందుసేద్యం వాడాలి."
+        }
+      ]
+    }
+  ]
+}

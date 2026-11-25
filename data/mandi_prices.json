@@ -1,0 +1,103 @@
+{
+  "updated_at": "Today, 06:00 AM IST",
+  "commodities": [
+    {
+      "id": "chilli_teja",
+      "name_en": "Red Chilli (Teja)",
+      "name_te": "ఎర్ర మిరప (తేజ)",
+      "variety": "Teja / Deluxe",
+      "market_en": "Guntur Mirchi Yard, AP",
+      "market_te": "గుంటూరు మిర్చి యార్డ్, ఆం.ప్ర.",
+      "min_price": 18500,
+      "max_price": 22400,
+      "modal_price": 20800,
+      "unit": "₹ / Kg",
+      "change": "+₹450",
+      "trend": "up"
+    },
+    {
+      "id": "paddy_bpt",
+      "name_en": "Paddy (BPT 5204 - Sona Masuri)",
+      "name_te": "వరి (సోనా మసూరి)",
+      "variety": "Super Fine Grade-A",
+      "market_en": "Suryapet Market Yard, TG",
+      "market_te": "సూర్యాపేట మార్కెట్ యార్డ్, తెలం.",
+      "min_price": 2320,
+      "max_price": 2750,
+      "modal_price": 2580,
+      "unit": "₹ / Kg",
+      "change": "+₹60",
+      "trend": "up"
+    },
+    {
+      "id": "cotton_long",
+      "name_en": "Cotton (Long Staple)",
+      "name_te": "ప్రత్తి (పొడుగు పింజ)",
+      "variety": "Bunny / Brahma",
+      "market_en": "Warangal APMC (Enmamula), TG",
+      "market_te": "వరంగల్ ఏనుమాముల మార్కెట్, తెలం.",
+      "min_price": 7100,
+      "max_price": 7850,
+      "modal_price": 7520,
+      "unit": "₹ / Kg",
+      "change": "+₹110",
+      "trend": "up"
+    },
+    {
+      "id": "maize_yellow",
+      "name_en": "Yellow Maize / Corn",
+      "name_te": "మొక్కజొన్న (పసుపు)",
+      "variety": "Hybrid Yellow",
+      "market_en": "Khammam Market Yard, TG",
+      "market_te": "ఖమ్మం మార్కెట్ యార్డ్, తెలం.",
+      "min_price": 2150,
+      "max_price": 2420,
+      "modal_price": 2310,
+      "unit": "₹ / Kg",
+      "change": "-₹30",
+      "trend": "down"
+    },
+    {
+      "id": "tomato_desi",
+      "name_en": "Tomato (Desi / Hybrid)",
+      "name_te": "టమోటా (హైబ్రిడ్)",
+      "variety": "Red Ripe Medium",
+      "market_en": "Madanapalle Tomato Yard, AP",
+      "market_te": "మదనపల్లె టమోటా మార్కెట్, ఆం.ప్ర.",
+      "min_price": 1400,
+      "max_price": 2100,
+      "modal_price": 1850,
+      "unit": "₹ / Kg (₹460/crate)",
+      "change": "+₹150",
+      "trend": "up"
+    },
+    {
+      "id": "turmeric_finger",
+      "name_en": "Turmeric (Finger)",
+      "name_te": "పసుపు (కొమ్ము)",
+      "variety": "Salem / Nizamabad Local",
+      "market_en": "Nizamabad APMC, TG",
+      "market_te": "నిజామాబాద్ మార్కెట్, తెలం.",
+      "min_price": 13200,
+      "max_price": 16800,
+      "modal_price": 15400,
+      "unit": "₹ / Kg",
+      "change": "+₹320",
+      "trend": "up"
+    },
+    {
+      "id": "groundnut_pod",
+      "name_en": "Groundnut with Pod",
+      "name_te": "వేరుశనగ కాయలు",
+      "variety": "K6 / Bold Pod",
+      "market_en": "Kurnool Agricultural Yard, AP",
+      "market_te": "కర్నూలు మార్కెట్ యార్డ్, ఆం.ప్ర.",
+      "min_price": 6400,
+      "max_price": 7350,
+      "modal_price": 6920,
+      "unit": "₹ / Kg",
+      "change": "+₹80",
+      "trend": "up"
+    }
+  ]
+}
