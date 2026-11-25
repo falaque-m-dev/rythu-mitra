@@ -783,17 +783,8 @@ async function route(req, res, url) {
         live: true
       });
     } catch (error) {
-      log('warn', 'mandi_gov_failed', { error: error.message });
-      // When live upstream is rate-limited or fails, return verified local Agmarknet Telangana dataset with mode 'live' & source 'data.gov.in'
-      if (Array.isArray(mandiPrices.commodities) && mandiPrices.commodities.length > 0) {
-        return sendJson(req, res, 200, {
-          ...mandiPrices,
-          mode: 'live',
-          source: 'data.gov.in',
-          live: true
-        });
-      }
-      throw new HttpError(502, 'Mandi data is unavailable', 'mandi_unavailable');
+      log('error', 'mandi_gov_failed', { error: error.message });
+      throw new HttpError(502, 'Government Mandi API data is temporarily unavailable: ' + error.message, 'mandi_unavailable');
     }
   }
 
@@ -832,28 +823,27 @@ async function route(req, res, url) {
     }
 
     if (GEMINI_API_KEY) {
-      try {
-        const reply = await callGeminiChat(query, lang);
-        return sendJson(req, res, 200, {
-          success: true,
-          reply,
-          live: true,
-          mode: 'live',
-          model: GEMINI_MODEL
-        });
-      } catch (error) {
-        log('error', 'chat_live_failed', { error: error.message });
-      }
+      // In production with an active Gemini key, always call live AI model
+      const reply = await callGeminiChat(query, lang);
+      return sendJson(req, res, 200, {
+        success: true,
+        reply,
+        live: true,
+        mode: 'live',
+        model: GEMINI_MODEL
+      });
     }
 
-    return sendJson(req, res, 200, {
-      success: true,
-      reply: answerAgronomyQueryOffline(query, lang),
-      live: false,
-      mode: 'degraded',
-      source: 'local-knowledge',
-      reason: GEMINI_API_KEY ? 'live_model_unavailable' : 'not_configured'
-    });
+    if (process.env.ENABLE_LOCAL_FALLBACK === '1' || !GEMINI_API_KEY) {
+      return sendJson(req, res, 200, {
+        success: true,
+        reply: answerAgronomyQueryOffline(query, lang),
+        live: false,
+        mode: 'degraded',
+        source: 'local-knowledge',
+        reason: 'not_configured'
+      });
+    }
   }
 
   if (pathname === '/api/diagnose') {
