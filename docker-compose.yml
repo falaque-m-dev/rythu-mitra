@@ -12,7 +12,11 @@ services:
       - HOST=0.0.0.0
       - NODE_ENV=production
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_API_KEY_ONE=${GEMINI_API_KEY_ONE:-}
+      - GEMINI_API_KEY_TWO=${GEMINI_API_KEY_TWO:-}
+      - GEMINI_API_KEYS=${GEMINI_API_KEYS:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.5-flash}
+      - GEMINI_FALLBACK_MODEL=${GEMINI_FALLBACK_MODEL:-gemini-3.5-flash-lite}
       - GEMINI_TTS_MODEL=${GEMINI_TTS_MODEL:-gemini-3.8-flash-tts}
       - GEMINI_TTS_VOICE=${GEMINI_TTS_VOICE:-Kore}
       - TTS_MAX_CHARS=${TTS_MAX_CHARS:-1200}

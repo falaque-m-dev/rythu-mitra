@@ -3,9 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { Info, Loader2, MapPin, Search, Sprout, TrendingDown, TrendingUp } from "lucide-react";
+import { Info, Loader2, MapPin, Search, TrendingDown, TrendingUp } from "lucide-react";
 import NumberFlow from "@number-flow/react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +14,7 @@ import { ApiError, getMandiPrices } from "@/lib/api";
 import type { MandiResult } from "@/lib/types";
 import { commodityCategory, getCropForCommodity } from "@/lib/content";
 import { formatCurrency, cn } from "@/lib/utils";
+import theme from "@/theme";
 
 type Filter = "all" | "cereals" | "spices" | "vegetables";
 
@@ -29,7 +29,6 @@ export function MandiPanel() {
   const handleFailure = useCallback((err: unknown) => {
     const message = err instanceof ApiError ? err.message : "Could not load prices.";
     setError(message);
-    toast.error(message);
   }, []);
 
   useEffect(() => {
@@ -181,6 +180,8 @@ export function MandiPanel() {
             <AnimatePresence mode="popLayout">
               {filtered.map((item, index) => {
                 const crop = getCropForCommodity(item.id, item.name_en);
+                const imageSrc = crop?.image ?? theme.images.market;
+                const imageAlt = crop?.name ?? (locale === "te" ? item.name_te : item.name_en);
                 const up = item.trend === "up";
                 return (
                   <motion.div
@@ -194,19 +195,13 @@ export function MandiPanel() {
                       <Card className="overflow-hidden border-border/70 shadow-card">
                         <CardContent className="flex items-center gap-3 px-3 py-2.5 sm:gap-4 sm:px-4 lg:px-5">
                           <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl sm:h-16 sm:w-16 bg-muted">
-                          {crop ? (
-                            <Image
-                              src={crop.image}
-                              alt={crop.name}
-                              fill
-                              sizes="80px"
-                              className="object-cover"
-                            />
-                          ) : (
-                            <span className="flex h-full w-full items-center justify-center text-primary/60">
-                              <Sprout className="h-6 w-6" aria-hidden="true" />
-                            </span>
-                          )}
+                          <Image
+                            src={imageSrc}
+                            alt={imageAlt}
+                            fill
+                            sizes="80px"
+                            className="object-cover"
+                          />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />
                         </div>
 

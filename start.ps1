@@ -9,7 +9,7 @@ if (-not (Test-Path .env)) {
     exit 1
 }
 
-# 2️⃣ Start / restart the API container (port 3000) – it reads .env for GEMINI_API_KEY
+# 2️⃣ Start / restart the API container (port 3000) – it reads .env for GEMINI_API_KEY_ONE/TWO or GEMINI_API_KEY
 $containerName = "rhythu-api"
 if (podman container exists $containerName) {
     Write-Host "🔁  Restarting existing API container `$containerName`"

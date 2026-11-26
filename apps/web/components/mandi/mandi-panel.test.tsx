@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 import { LocaleProvider } from "@/components/providers/locale-provider";
+import { getMandiPrices } from "@/lib/api";
 import { MandiPanel } from "./mandi-panel";
 
 vi.mock("@/lib/api", () => ({
@@ -53,5 +55,18 @@ describe("MandiPanel", () => {
     expect(await screen.findByText(/Curated reference rates/)).toBeInTheDocument();
     expect(screen.getByText(/Confirm with your local mandi/)).toBeInTheDocument();
     expect(await screen.findByText("Red Chilli (Teja)")).toBeInTheDocument();
+  });
+
+  it("does not show an error toast when prices cannot be loaded", async () => {
+    vi.mocked(getMandiPrices).mockRejectedValueOnce(new Error("government api unavailable"));
+
+    render(
+      <LocaleProvider>
+        <MandiPanel />
+      </LocaleProvider>
+    );
+
+    expect(await screen.findByText("Could not load prices.")).toBeInTheDocument();
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

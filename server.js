@@ -37,12 +37,27 @@ function loadEnv() {
 
 loadEnv();
 
+function collectGeminiApiKeys() {
+  const namedKeys = Object.entries(process.env)
+    .filter(([name]) => /^GEMINI_API_KEY_(?:\d+|ONE|TWO|THREE)$/.test(name))
+    .sort(([left], [right]) => left.localeCompare(right, undefined, { numeric: true }))
+    .map(([, value]) => value);
+  const values = [
+    process.env.GEMINI_API_KEY,
+    ...namedKeys,
+    ...(process.env.GEMINI_API_KEYS || '').split(',')
+  ];
+  return [...new Set(values.map((value) => (value || '').trim()).filter(Boolean))];
+}
+
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = NODE_ENV === 'production';
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_API_KEYS = collectGeminiApiKeys();
+const GEMINI_API_KEY = GEMINI_API_KEYS[0] || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash-lite';
 const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES) || 12 * 1024 * 1024;
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000;
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX) || 60;
@@ -153,6 +168,40 @@ async function fetchMandiFromGov() {
   };
   mandiCache = { payload, expiresAt: Date.now() + MANDI_CACHE_TTL_MS };
   return payload;
+}
+
+function buildCuratedMandiPayload() {
+  const commodities = (Array.isArray(mandiPrices.commodities) ? mandiPrices.commodities : [])
+    .map((item, index) => {
+      const toKg = (value) => {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) return 0;
+        const perKg = numeric >= 1000 ? numeric / 100 : numeric;
+        return Math.round(perKg * 10) / 10;
+      };
+      const name = item.name_en || `Commodity ${index + 1}`;
+      return {
+        ...item,
+        id: item.id || `${name.replace(/[^a-z0-9]+/gi, '').toLowerCase()}_${index + 1}`,
+        min_price: toKg(item.min_price),
+        max_price: toKg(item.max_price),
+        modal_price: toKg(item.modal_price),
+        unit: '₹ / Kg',
+        change: ''
+      };
+    })
+    .filter((item) => item.modal_price > 0);
+
+  if (!commodities.length) return null;
+
+  return {
+    updated_at: mandiPrices.updated_at || '',
+    commodities,
+    mode: 'curated',
+    source: 'curated-dataset',
+    live: false,
+    notice: 'Live government mandi data is unavailable. Showing saved reference rates.'
+  };
 }
 
 function log(level, message, fields = {}) {
@@ -459,17 +508,17 @@ function buildWeatherPayload(city, meteo) {
   };
 }
 
-async function callGemini(payload, timeoutMs) {
-  if (!GEMINI_API_KEY) {
+async function callGemini(payload, timeoutMs, model, apiKey) {
+  if (!apiKey) {
     throw new Error('Gemini is not configured');
   }
 
   const endpoint = new URL(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-      GEMINI_MODEL
+      model
     )}:generateContent`
   );
-  endpoint.searchParams.set('key', GEMINI_API_KEY);
+  endpoint.searchParams.set('key', apiKey);
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -487,12 +536,74 @@ async function callGemini(payload, timeoutMs) {
   }
 
   if (!response.ok) {
-    throw new Error(body?.error?.message || `Gemini returned HTTP ${response.status}`);
+    const error = new Error(body?.error?.message || `Gemini returned HTTP ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   if (!body) {
     throw new Error('Gemini returned an empty response');
   }
   return body;
+}
+
+function isGeminiQuotaError(error) {
+  return (
+    error?.status === 429 ||
+    /quota|rate limit|exceeded your current quota/i.test(error?.message || '')
+  );
+}
+
+function isGeminiKeyError(error) {
+  return error?.status === 401 || error?.status === 403;
+}
+
+function isGeminiModelFallbackError(error) {
+  return isGeminiQuotaError(error) || error?.status === 500 || error?.status === 503;
+}
+
+async function callGeminiWithFallback(payload, timeoutMs) {
+  const models = [GEMINI_MODEL, GEMINI_FALLBACK_MODEL].filter(
+    (model, index, list) => model && list.indexOf(model) === index
+  );
+  let lastError = null;
+
+  for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
+    const model = models[modelIndex];
+    for (let keyIndex = 0; keyIndex < GEMINI_API_KEYS.length; keyIndex += 1) {
+      try {
+        const body = await callGemini(payload, timeoutMs, model, GEMINI_API_KEYS[keyIndex]);
+        return { body, model };
+      } catch (error) {
+        lastError = error;
+        const hasNextKey = keyIndex + 1 < GEMINI_API_KEYS.length;
+        const hasNextModel = modelIndex + 1 < models.length;
+
+        if (hasNextKey && (isGeminiQuotaError(error) || isGeminiKeyError(error))) {
+          log('warn', 'gemini_key_fallback', {
+            model,
+            key_index: keyIndex + 1,
+            next_key_index: keyIndex + 2,
+            error: error.message
+          });
+          continue;
+        }
+
+        if (hasNextModel && isGeminiModelFallbackError(error)) {
+          log('warn', 'gemini_model_fallback', {
+            from: model,
+            to: models[modelIndex + 1],
+            key_index: keyIndex + 1,
+            error: error.message
+          });
+          break;
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  throw lastError || new Error('Gemini request failed');
 }
 
 function extractGeminiText(body) {
@@ -549,20 +660,12 @@ function pcmToWav(pcm, sampleRate = 24_000) {
   return Buffer.concat([header, pcm]);
 }
 
-async function synthesizeSpeech(text, lang, voice) {
-  if (!GEMINI_API_KEY) {
-    throw new HttpError(
-      503,
-      'Natural voice is not configured. Add GEMINI_API_KEY to enable it.',
-      'tts_not_configured'
-    );
-  }
-
+async function requestGeminiSpeech(text, lang, voice, apiKey) {
   const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-goog-api-key': GEMINI_API_KEY
+      'x-goog-api-key': apiKey
     },
     body: JSON.stringify({
       model: GEMINI_TTS_MODEL,
@@ -601,7 +704,9 @@ async function synthesizeSpeech(text, lang, voice) {
   }
 
   if (!response.ok) {
-    throw new Error(body?.error?.message || `Gemini TTS returned HTTP ${response.status}`);
+    const error = new Error(body?.error?.message || `Gemini TTS returned HTTP ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
 
   const audioBase64 = findSpeechAudio(body);
@@ -616,8 +721,39 @@ async function synthesizeSpeech(text, lang, voice) {
   return audio;
 }
 
+async function synthesizeSpeech(text, lang, voice) {
+  if (!GEMINI_API_KEYS.length) {
+    throw new HttpError(
+      503,
+      'Natural voice is not configured. Add GEMINI_API_KEY or GEMINI_API_KEY_ONE/TWO to enable it.',
+      'tts_not_configured'
+    );
+  }
+
+  let lastError = null;
+  for (let keyIndex = 0; keyIndex < GEMINI_API_KEYS.length; keyIndex += 1) {
+    try {
+      return await requestGeminiSpeech(text, lang, voice, GEMINI_API_KEYS[keyIndex]);
+    } catch (error) {
+      lastError = error;
+      const hasNextKey = keyIndex + 1 < GEMINI_API_KEYS.length;
+      if (hasNextKey && (isGeminiQuotaError(error) || isGeminiKeyError(error))) {
+        log('warn', 'tts_key_fallback', {
+          key_index: keyIndex + 1,
+          next_key_index: keyIndex + 2,
+          error: error.message
+        });
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw lastError || new Error('Gemini TTS request failed');
+}
+
 async function callGeminiChat(query, lang) {
-  const body = await callGemini(
+  const { body, model } = await callGeminiWithFallback(
     {
       system_instruction: {
         parts: [
@@ -632,14 +768,14 @@ async function callGeminiChat(query, lang) {
     },
     AI_TIMEOUT_MS
   );
-  return extractGeminiText(body);
+  return { reply: extractGeminiText(body), model };
 }
 
 async function callGeminiVision(base64ImageStr, lang) {
   const [meta, base64Data] = base64ImageStr.split(';base64,');
   const mimeType = meta.replace('data:', '') || 'image/jpeg';
 
-  const body = await callGemini(
+  const { body, model } = await callGeminiWithFallback(
     {
       system_instruction: {
         parts: [
@@ -691,7 +827,7 @@ async function callGeminiVision(base64ImageStr, lang) {
   if (!diagnosis || typeof diagnosis.disease !== 'string') {
     throw new Error('Gemini diagnosis was missing required fields');
   }
-  return diagnosis;
+  return { diagnosis, model };
 }
 
 function answerAgronomyQueryOffline(query, lang) {
@@ -751,9 +887,15 @@ async function route(req, res, url) {
       service: 'rythu-mitra-api',
       version: VERSION,
       uptime_seconds: Math.round((Date.now() - STARTED_AT) / 1000),
-      ai: { configured: Boolean(GEMINI_API_KEY), model: GEMINI_MODEL },
+      ai: {
+        configured: GEMINI_API_KEYS.length > 0,
+        key_count: GEMINI_API_KEYS.length,
+        model: GEMINI_MODEL,
+        fallback_model: GEMINI_FALLBACK_MODEL
+      },
       tts: {
-        configured: Boolean(GEMINI_API_KEY),
+        configured: GEMINI_API_KEYS.length > 0,
+        key_count: GEMINI_API_KEYS.length,
         model: GEMINI_TTS_MODEL,
         voice: GEMINI_TTS_VOICE
       },
@@ -773,7 +915,9 @@ async function route(req, res, url) {
 
   if (pathname === '/api/mandi') {
     assertAllowedMethod(req, ['GET']);
+    const fallback = buildCuratedMandiPayload();
     if (!DATA_GOV_IN_API_KEY) {
+      if (fallback) return sendJson(req, res, 200, fallback);
       throw new HttpError(503, 'DATA_GOV_IN_API_KEY is not configured', 'mandi_not_configured');
     }
     try {
@@ -785,8 +929,9 @@ async function route(req, res, url) {
         live: true
       });
     } catch (error) {
-      log('error', 'mandi_gov_failed', { error: error.message });
-      throw new HttpError(502, 'Government Mandi API data is temporarily unavailable: ' + error.message, 'mandi_unavailable');
+      log('warn', 'mandi_gov_failed', { error: error.message });
+      if (fallback) return sendJson(req, res, 200, fallback);
+      throw new HttpError(502, 'Government Mandi API data is temporarily unavailable', 'mandi_unavailable');
     }
   }
 
@@ -826,14 +971,26 @@ async function route(req, res, url) {
 
     if (GEMINI_API_KEY) {
       // In production with an active Gemini key, always call live AI model
-      const reply = await callGeminiChat(query, lang);
-      return sendJson(req, res, 200, {
-        success: true,
-        reply,
-        live: true,
-        mode: 'live',
-        model: GEMINI_MODEL
-      });
+      try {
+        const { reply, model } = await callGeminiChat(query, lang);
+        return sendJson(req, res, 200, {
+          success: true,
+          reply,
+          live: true,
+          mode: 'live',
+          model
+        });
+      } catch (error) {
+        log('error', 'chat_live_failed', { error: error.message });
+        const quotaExceeded = isGeminiQuotaError(error);
+        throw new HttpError(
+          503,
+          quotaExceeded
+            ? 'The AI service quota is temporarily exhausted. Please try again later.'
+            : 'The AI service is temporarily unavailable. Please try again later.',
+          quotaExceeded ? 'ai_quota_exceeded' : 'ai_unavailable'
+        );
+      }
     }
 
     if (process.env.ENABLE_LOCAL_FALLBACK === '1' || !GEMINI_API_KEY) {
@@ -871,27 +1028,29 @@ async function route(req, res, url) {
     if (!GEMINI_API_KEY) {
       throw new HttpError(
         503,
-        'Crop diagnosis is not configured. Add GEMINI_API_KEY to enable live image analysis.',
+        'Crop diagnosis is not configured. Add GEMINI_API_KEY or GEMINI_API_KEY_ONE/TWO to enable live image analysis.',
         'diagnosis_not_configured'
       );
     }
 
     try {
-      const diagnosis = await callGeminiVision(image, lang);
+      const { diagnosis, model } = await callGeminiVision(image, lang);
       return sendJson(req, res, 200, {
         success: true,
         diagnosis,
         live: true,
         mode: 'live',
-        model: GEMINI_MODEL
+        model
       });
-      console.log('[API] diagnose response sent');
     } catch (error) {
       log('error', 'diagnose_live_failed', { error: error.message });
+      const quotaExceeded = isGeminiQuotaError(error);
       throw new HttpError(
-        502,
-        'The vision model could not analyze this image. Please try again.',
-        'diagnosis_unavailable'
+        503,
+        quotaExceeded
+          ? 'The AI service quota is temporarily exhausted. Please try again later.'
+          : 'The vision model could not analyze this image. Please try again.',
+        quotaExceeded ? 'ai_quota_exceeded' : 'diagnosis_unavailable'
       );
     }
   }
@@ -901,7 +1060,7 @@ async function route(req, res, url) {
     if (!GEMINI_API_KEY) {
       throw new HttpError(
         503,
-        'Natural voice is not configured. Add GEMINI_API_KEY to enable it.',
+        'Natural voice is not configured. Add GEMINI_API_KEY or GEMINI_API_KEY_ONE/TWO to enable it.',
         'tts_not_configured'
       );
     }
@@ -1047,8 +1206,10 @@ function start() {
       port: PORT,
       host: HOST,
       env: NODE_ENV,
-      ai_configured: Boolean(GEMINI_API_KEY),
+      ai_configured: GEMINI_API_KEYS.length > 0,
+      ai_key_count: GEMINI_API_KEYS.length,
       ai_model: GEMINI_MODEL,
+      ai_fallback_model: GEMINI_FALLBACK_MODEL,
       tts_model: GEMINI_TTS_MODEL,
       tts_voice: GEMINI_TTS_VOICE
     });
@@ -1081,6 +1242,7 @@ module.exports = {
   start,
   answerAgronomyQueryOffline,
   buildWeatherPayload,
+  buildCuratedMandiPayload,
   parseCoordinate,
   findSpeechAudio,
   pcmToWav
