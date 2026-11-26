@@ -11,7 +11,6 @@ import {
   Leaf,
   Loader2,
   MapPin,
-  Sparkles,
   ScanLine,
   TrendingDown,
   TrendingUp,
@@ -132,7 +131,7 @@ export function HomeDashboard() {
                   variant="outline"
                   className="h-11 rounded-full border-white/30 bg-white/10 px-5 text-white backdrop-blur hover:bg-white/20 hover:text-white"
                 >
-                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  <Leaf className="h-4 w-4" aria-hidden="true" />
                   {t("home.askAi")}
                 </Button>
               </div>

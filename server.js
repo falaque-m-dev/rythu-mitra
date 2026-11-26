@@ -674,18 +674,14 @@ function pcmToWav(pcm, sampleRate = 24_000) {
   return Buffer.concat([header, pcm]);
 }
 
-async function requestGeminiSpeech(text, lang, voice, apiKey) {
-  const styleHint =
-    lang === 'te'
-      ? 'Speak in natural, warm, clear Telugu for farmers.'
-      : 'Speak in natural, warm, clear Indian English for farmers.';
+async function requestGeminiSpeech(text, voice, apiKey) {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TTS_MODEL}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${styleHint}\n\n${text}` }] }],
+        contents: [{ parts: [{ text }] }],
         generationConfig: {
           responseModalities: ['AUDIO'],
           speechConfig: {
@@ -723,7 +719,7 @@ async function requestGeminiSpeech(text, lang, voice, apiKey) {
   return audio;
 }
 
-async function synthesizeSpeech(text, lang, voice) {
+async function synthesizeSpeech(text, voice) {
   if (!GEMINI_API_KEYS.length) {
     throw new HttpError(
       503,
@@ -735,7 +731,7 @@ async function synthesizeSpeech(text, lang, voice) {
   let lastError = null;
   for (let keyIndex = 0; keyIndex < GEMINI_API_KEYS.length; keyIndex += 1) {
     try {
-      return await requestGeminiSpeech(text, lang, voice, GEMINI_API_KEYS[keyIndex]);
+      return await requestGeminiSpeech(text, voice, GEMINI_API_KEYS[keyIndex]);
     } catch (error) {
       lastError = error;
       const hasNextKey = keyIndex + 1 < GEMINI_API_KEYS.length;
@@ -1096,7 +1092,7 @@ async function route(req, res, url) {
     }
 
     try {
-      const audio = await synthesizeSpeech(text, lang, voice);
+      const audio = await synthesizeSpeech(text, voice);
       ttsCache.set(cacheKey, { createdAt: Date.now(), audio });
       if (ttsCache.size > TTS_CACHE_MAX) {
         ttsCache.delete(ttsCache.keys().next().value);
