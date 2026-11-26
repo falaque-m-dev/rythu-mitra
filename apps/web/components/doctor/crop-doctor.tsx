@@ -46,9 +46,22 @@ export function CropDoctor() {
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const autoReadRef = useRef(false);
 
+  const attachVideoRef = useCallback((video: HTMLVideoElement | null) => {
+    videoRef.current = video;
+    if (video && streamRef.current) {
+      if (video.srcObject !== streamRef.current) {
+        video.srcObject = streamRef.current;
+      }
+      void video.play().catch(() => {});
+    }
+  }, []);
+
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
     setCameraOpen(false);
   }, []);
 
@@ -83,7 +96,10 @@ export function CropDoctor() {
 
   useEffect(() => {
     if (cameraOpen && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current;
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      void videoRef.current.play().catch(() => {});
     }
   }, [cameraOpen]);
 
@@ -142,12 +158,25 @@ export function CropDoctor() {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-        audio: false
-      });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false
+        });
+      } catch {
+        // Fallback for devices without back camera (e.g. desktop webcams, laptops)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+      }
       streamRef.current = stream;
       setCameraOpen(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        void videoRef.current.play().catch(() => {});
+      }
     } catch {
       toast.error(t("doctor.cameraDenied"));
       fileRef.current?.click();
@@ -453,18 +482,31 @@ export function CropDoctor() {
           if (!open) stopCamera();
         }}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[calc(100%-1.5rem)] sm:w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[92vh] flex flex-col p-4 sm:p-6 overflow-hidden">
           <DialogTitle>{t("doctor.camera")}</DialogTitle>
           <DialogDescription>{t("doctor.desc")}</DialogDescription>
-          <div className="relative aspect-video overflow-hidden rounded-2xl bg-black">
-            <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
+          <div className="relative aspect-[4/3] sm:aspect-video w-full max-h-[60vh] sm:max-h-[65vh] overflow-hidden rounded-2xl bg-black flex items-center justify-center shadow-inner">
+            <video
+              ref={attachVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className="h-full w-full object-cover"
+            />
+            {/* Viewfinder target framing guide */}
+            <div className="pointer-events-none absolute inset-4 sm:inset-8 rounded-xl border border-white/20">
+              <div className="absolute -left-0.5 -top-0.5 h-4 w-4 border-l-2 border-t-2 border-primary" />
+              <div className="absolute -right-0.5 -top-0.5 h-4 w-4 border-r-2 border-t-2 border-primary" />
+              <div className="absolute -bottom-0.5 -left-0.5 h-4 w-4 border-b-2 border-l-2 border-primary" />
+              <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 border-b-2 border-r-2 border-primary" />
+            </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={stopCamera}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3 pt-1">
+            <Button variant="outline" onClick={stopCamera} className="w-full sm:w-auto">
               {t("doctor.cancel")}
             </Button>
-            <Button onClick={capture}>
-              <Camera className="h-4 w-4" aria-hidden="true" />
+            <Button onClick={capture} className="w-full sm:w-auto font-bold">
+              <Camera className="h-4 w-4 mr-1.5" aria-hidden="true" />
               {t("doctor.capture")}
             </Button>
           </div>
