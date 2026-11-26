@@ -48,7 +48,7 @@ test('health reports service status without leaking the API key', async () => {
   assert.equal(body.service, 'rythu-mitra-api');
   assert.equal(body.ai.configured, false);
   assert.equal(body.ai.key_count, 0);
-  assert.equal(body.ai.fallback_model, 'gemini-2.0-flash');
+  assert.equal(body.ai.fallback_model, 'gemini-3.8-flash');
   assert.equal(body.tts.configured, false);
   assert.equal('apiKey' in body, false);
 });
