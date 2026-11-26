@@ -91,7 +91,7 @@ Recommended setup:
 - Host the Next.js frontend on **Vercel**.
 - Host the Node.js API on **Render**, **Railway**, or **Fly.io**.
 - Point the frontend to the public API address.
-- Store `GEMINI_API_KEY` and `DATA_GOV_IN_API_KEY` only on the API host.
+- Store `GEMINI_API_KEY_ONE` / `GEMINI_API_KEY_TWO` (or `GEMINI_API_KEY`) and `DATA_GOV_IN_API_KEY` only on the API host. Gemini quota is per Google Cloud project, so multiple keys only add capacity when they belong to different projects.
 - Allow the frontend's public domain in the API's CORS settings.
 - Share the HTTPS frontend link with demo users.
 

@@ -4,8 +4,18 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 
 process.env.GEMINI_API_KEY = '';
+process.env.GEMINI_API_KEY_ONE = '';
+process.env.GEMINI_API_KEY_TWO = '';
+process.env.GEMINI_API_KEYS = '';
+process.env.DATA_GOV_IN_API_KEY = '';
 
-const { createServer, findSpeechAudio, pcmToWav, buildWeatherPayload } = require('../server');
+const {
+  createServer,
+  findSpeechAudio,
+  pcmToWav,
+  buildWeatherPayload,
+  buildCuratedMandiPayload
+} = require('../server');
 
 let server;
 let baseUrl;
@@ -37,6 +47,8 @@ test('health reports service status without leaking the API key', async () => {
   assert.equal(body.status, 'ok');
   assert.equal(body.service, 'rythu-mitra-api');
   assert.equal(body.ai.configured, false);
+  assert.equal(body.ai.key_count, 0);
+  assert.equal(body.ai.fallback_model, 'gemini-3.5-flash-lite');
   assert.equal(body.tts.configured, false);
   assert.equal('apiKey' in body, false);
 });
@@ -49,19 +61,23 @@ test('readiness reports loaded datasets', async () => {
   assert.ok(body.data.mandi > 0);
 });
 
-test('mandi prices require live data.gov.in data', async () => {
+test('mandi prices fall back to curated data without a government key', async () => {
   const response = await fetch(`${baseUrl}/api/mandi`);
-  if (response.status === 200) {
-    const body = await response.json();
-    assert.equal(body.mode, 'live');
-    assert.equal(body.source, 'data.gov.in');
-    assert.ok(Array.isArray(body.commodities));
-    assert.ok(body.commodities.length > 0);
-    return;
-  }
-  assert.ok(response.status === 502 || response.status === 503);
+  assert.equal(response.status, 200);
   const body = await response.json();
-  assert.ok(body.code === 'mandi_unavailable' || body.code === 'mandi_not_configured');
+  assert.equal(body.mode, 'curated');
+  assert.equal(body.source, 'curated-dataset');
+  assert.equal(body.live, false);
+  assert.ok(Array.isArray(body.commodities));
+  assert.ok(body.commodities.length > 0);
+});
+
+test('curated mandi fallback normalizes prices to per kilogram', () => {
+  const payload = buildCuratedMandiPayload();
+  assert.equal(payload.mode, 'curated');
+  const chilli = payload.commodities.find((item) => item.id === 'chilli_teja');
+  assert.equal(chilli.modal_price, 208);
+  assert.equal(chilli.unit, '₹ / Kg');
 });
 
 test('the removed demo scenarios endpoint returns JSON 404', async () => {
