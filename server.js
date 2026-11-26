@@ -64,7 +64,7 @@ const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX) || 60;
 const AI_RATE_LIMIT_MAX = Number(process.env.AI_RATE_LIMIT_MAX) || 10;
 const UPSTREAM_TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS) || 8_000;
 const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS) || 45_000;
-const GEMINI_TTS_MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts';
+const GEMINI_TTS_MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
 const GEMINI_TTS_VOICE = process.env.GEMINI_TTS_VOICE || 'Kore';
 const DATA_GOV_IN_API_KEY = process.env.DATA_GOV_IN_API_KEY || '';
 const DATA_GOV_IN_SAMPLE_KEY = '579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b';
@@ -678,39 +678,27 @@ function pcmToWav(pcm, sampleRate = 24_000) {
 }
 
 async function requestGeminiSpeech(text, lang, voice, apiKey) {
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey
-    },
-    body: JSON.stringify({
-      model: GEMINI_TTS_MODEL,
-      input: [
-        {
-          type: 'user_input',
-          content: [
-            {
-              type: 'text',
-              text,
-              annotations: [
-                {
-                  type: 'speech_metadata',
-                  style:
-                    lang === 'te'
-                      ? 'natural, warm, clear Telugu for farmers'
-                      : 'natural, warm, clear Indian English for farmers'
-                }
-              ]
-            }
-          ]
+  const styleHint =
+    lang === 'te'
+      ? 'Speak in natural, warm, clear Telugu for farmers.'
+      : 'Speak in natural, warm, clear Indian English for farmers.';
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TTS_MODEL}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${styleHint}\n\n${text}` }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } }
+          }
         }
-      ],
-      response_format: { type: 'audio', mime_type: 'audio/wav', sample_rate: 24_000 },
-      generation_config: { speech_config: [{ voice }] }
-    }),
-    signal: AbortSignal.timeout(AI_TIMEOUT_MS)
-  });
+      }),
+      signal: AbortSignal.timeout(AI_TIMEOUT_MS)
+    }
+  );
 
   const raw = await response.text();
   let body = null;
