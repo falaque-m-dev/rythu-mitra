@@ -218,13 +218,15 @@ export function MandiPanel() {
                               </h2>
                               <p className="truncate text-[11px] text-muted-foreground">{item.variety}</p>
                             </div>
-                            <Badge
-                              variant={up ? "success" : "destructive"}
-                              className="shrink-0 gap-1 rounded-full px-2 py-0.5 text-[10px]"
-                            >
-                              {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                              {item.change}
-                            </Badge>
+                            {item.change ? (
+                              <Badge
+                                variant={up ? "success" : "destructive"}
+                                className="shrink-0 gap-1 rounded-full px-2 py-0.5 text-[10px]"
+                              >
+                                {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                                {item.change}
+                              </Badge>
+                            ) : null}
                           </div>
 
                           <p className="mt-1 flex items-center gap-1 truncate text-[10px] text-muted-foreground">

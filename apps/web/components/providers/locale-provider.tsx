@@ -100,6 +100,8 @@ const en: Dictionary = {
   "advisor.suggestion2": "How much urea for paddy?",
   "advisor.suggestion3": "How do I control pests in chilli?",
   "advisor.failed": "Could not get a reply.",
+  "advisor.micUnavailable":
+    "Microphone is unavailable. Use a supported browser, allow microphone access, and open the app over HTTPS or localhost.",
   "weather.title": "Weather",
   "weather.desc": "Live conditions and an actionable field advisory.",
   "weather.location": "Region",
@@ -229,6 +231,8 @@ const te: Dictionary = {
   "advisor.suggestion2": "వరికి ఎంత యూరియా వేయాలి?",
   "advisor.suggestion3": "మిరపలో తెగుళ్లను ఎలా నియంత్రించాలి?",
   "advisor.failed": "సమాధానం పొందలేకపోయాము.",
+  "advisor.micUnavailable":
+    "మైక్రోఫోన్ అందుబాటులో లేదు. మద్దతు ఉన్న బ్రౌజర్‌ను ఉపయోగించి, మైక్రోఫోన్ అనుమతి ఇవ్వండి మరియు యాప్‌ను HTTPS లేదా localhost ద్వారా తెరవండి.",
   "weather.title": "వాతావరణం",
   "weather.desc": "ప్రత్యక్ష పరిస్థితులు మరియు వ్యవసాయ సూచన.",
   "weather.location": "ప్రాంతం",

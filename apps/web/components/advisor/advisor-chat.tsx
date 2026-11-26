@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, Mic, Send, Trash2 } from "lucide-react";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { WheatCoinIcon } from "@/components/ui/wheat-coin-icon";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +29,11 @@ interface AdvisorChatProps {
 }
 
 type BrowserRecognitionEvent = {
-  results: Array<Array<{ transcript?: string }>>;
+  results: ArrayLike<ArrayLike<{ transcript?: string }>>;
+};
+
+type BrowserRecognitionErrorEvent = {
+  error?: string;
 };
 
 interface BrowserRecognition {
@@ -38,7 +44,7 @@ interface BrowserRecognition {
   stop: () => void;
   onresult: ((event: BrowserRecognitionEvent) => void) | null;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event: BrowserRecognitionErrorEvent) => void) | null;
 }
 
 type BrowserRecognitionCtor = new () => BrowserRecognition;
@@ -129,33 +135,58 @@ export function AdvisorChat({ className, compact = false }: AdvisorChatProps) {
   }, [locale, messages, speak]);
 
   const toggleVoice = useCallback(() => {
-    if (!voiceListening) {
-      const browserWindow = window as unknown as {
-        SpeechRecognition?: BrowserRecognitionCtor;
-        webkitSpeechRecognition?: BrowserRecognitionCtor;
-      };
-      const Ctor = browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
-      if (!Ctor) {
-        toast.error(t("doctor.voiceUnavailable"));
-        return;
-      }
-      const recognition = new Ctor();
-      recognition.lang = locale === "te" ? "te-IN" : "en-IN";
-      recognition.interimResults = false;
-      recognition.continuous = false;
-      recognition.onresult = (event) => {
-        const transcript = event.results.map((result) => result[0]?.transcript ?? "").join("");
-        if (transcript) setInput((current) => (current ? `${current} ${transcript}` : transcript));
-      };
-      recognition.onend = () => setVoiceListening(false);
-      recognition.onerror = () => setVoiceListening(false);
-      recognitionRef.current = recognition;
-      recognition.start();
-      setVoiceListening(true);
-    } else {
-      recognitionRef.current?.stop();
+    if (voiceListening) {
+      try {
+        recognitionRef.current?.stop();
+      } catch {}
       recognitionRef.current = null;
       setVoiceListening(false);
+      return;
+    }
+
+    if (!window.isSecureContext) {
+      toast.error(t("advisor.micUnavailable"));
+      return;
+    }
+
+    const browserWindow = window as unknown as {
+      SpeechRecognition?: BrowserRecognitionCtor;
+      webkitSpeechRecognition?: BrowserRecognitionCtor;
+    };
+    const Ctor = browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
+    if (!Ctor) {
+      toast.error(t("advisor.micUnavailable"));
+      return;
+    }
+
+    const recognition = new Ctor();
+    recognition.lang = locale === "te" ? "te-IN" : "en-IN";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results, (result) => result[0]?.transcript ?? "").join("");
+      if (transcript) setInput((current) => (current ? `${current} ${transcript}` : transcript));
+    };
+    recognition.onend = () => {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      setVoiceListening(false);
+    };
+    recognition.onerror = (event) => {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      setVoiceListening(false);
+      if (event.error !== "aborted" && event.error !== "no-speech") {
+        toast.error(t("advisor.micUnavailable"));
+      }
+    };
+    recognitionRef.current = recognition;
+
+    try {
+      recognition.start();
+      setVoiceListening(true);
+    } catch {
+      recognitionRef.current = null;
+      setVoiceListening(false);
+      toast.error(t("advisor.micUnavailable"));
     }
   }, [locale, t, voiceListening]);
 
@@ -274,7 +305,13 @@ export function AdvisorChat({ className, compact = false }: AdvisorChatProps) {
                         : "rounded-tl-md border border-border bg-card text-foreground shadow-subtle"
                     )}
                   >
-                    <p className="whitespace-pre-line">{message.content}</p>
+                    {isUser ? (
+                      <p className="whitespace-pre-line">{message.content}</p>
+                    ) : (
+                      <div className="chat-markdown">
+                        <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
+                      </div>
+                    )}
                     {!isUser && message.mode ? (
                       <Badge
                         variant={message.mode === "live" ? "success" : "accent"}
@@ -321,6 +358,7 @@ export function AdvisorChat({ className, compact = false }: AdvisorChatProps) {
             size="icon"
             className={cn("h-11 w-11 shrink-0 rounded-full", voiceListening && "animate-pulse bg-primary/10")}
             aria-label={voiceListening ? t("advisor.stopListening") : t("advisor.listen")}
+            aria-pressed={voiceListening}
           >
             <Mic className="h-4 w-4" aria-hidden="true" />
           </Button>

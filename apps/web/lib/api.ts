@@ -2,6 +2,7 @@ import type { ChatResult, DiagnoseResult, MandiResult, WeatherResult } from "./t
 
 const API_BASE = "/api";
 const DEFAULT_TIMEOUT = 20_000;
+const AI_TIMEOUT = 60_000;
 
 export class ApiError extends Error {
   status: number;
@@ -83,7 +84,8 @@ export function getMandiPrices() {
 export async function sendChat(query: string, lang: string): Promise<ChatResult> {
   const data = await request<{ success: boolean; reply: string; live?: boolean }>("/chat", {
     method: "POST",
-    body: JSON.stringify({ query, lang })
+    body: JSON.stringify({ query, lang }),
+    timeoutMs: AI_TIMEOUT
   });
 
   return {
@@ -102,7 +104,7 @@ export async function diagnose(payload: {
     {
       method: "POST",
       body: JSON.stringify(payload),
-      timeoutMs: 45_000
+      timeoutMs: AI_TIMEOUT
     }
   );
 

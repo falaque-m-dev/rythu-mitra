@@ -143,6 +143,37 @@
     text-wrap: pretty;
   }
 
+  .chat-markdown p {
+    margin: 0.4rem 0;
+  }
+
+  .chat-markdown ul,
+  .chat-markdown ol {
+    margin: 0.4rem 0;
+    padding-left: 1.25rem;
+  }
+
+  .chat-markdown ul {
+    list-style: disc;
+  }
+
+  .chat-markdown ol {
+    list-style: decimal;
+  }
+
+  .chat-markdown strong {
+    font-weight: 600;
+  }
+
+  .chat-markdown em {
+    font-style: italic;
+  }
+
+  .chat-markdown hr {
+    margin: 0.75rem 0;
+    border-top: 1px solid hsl(var(--border));
+  }
+
   .app-bg {
     background-image:
       radial-gradient(circle at 10% -10%, hsl(var(--primary) / 0.12), transparent 26rem),
