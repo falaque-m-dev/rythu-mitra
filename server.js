@@ -56,8 +56,8 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = NODE_ENV === 'production';
 const GEMINI_API_KEYS = collectGeminiApiKeys();
 const GEMINI_API_KEY = GEMINI_API_KEYS[0] || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
-const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash-lite';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-2.0-flash';
 const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES) || 12 * 1024 * 1024;
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000;
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX) || 60;
@@ -558,13 +558,26 @@ function isGeminiKeyError(error) {
 }
 
 function isGeminiModelFallbackError(error) {
-  return isGeminiQuotaError(error) || error?.status === 500 || error?.status === 503;
+  return (
+    isGeminiQuotaError(error) ||
+    error?.status === 404 ||
+    error?.status === 500 ||
+    error?.status === 503 ||
+    /not found|not supported/i.test(error?.message || '')
+  );
 }
 
 async function callGeminiWithFallback(payload, timeoutMs) {
-  const models = [GEMINI_MODEL, GEMINI_FALLBACK_MODEL].filter(
-    (model, index, list) => model && list.indexOf(model) === index
-  );
+  const candidateModels = [
+    GEMINI_MODEL,
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    GEMINI_FALLBACK_MODEL,
+    'gemini-2.5-flash-lite',
+    'gemini-1.5-flash-8b'
+  ].filter(Boolean);
+  const models = [...new Set(candidateModels)];
   let lastError = null;
 
   for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
@@ -596,6 +609,10 @@ async function callGeminiWithFallback(payload, timeoutMs) {
             error: error.message
           });
           break;
+        }
+
+        if (hasNextKey) {
+          continue;
         }
 
         throw error;
@@ -760,11 +777,15 @@ async function callGeminiChat(query, lang) {
           {
             text: `You are Rythu Mitra, an agricultural advisor for farmers in Telangana. Answer in ${
               lang === 'te' ? 'Telugu' : 'English'
-            }. Give practical agronomy guidance with exact fertilizer doses, organic remedies, and chemical active ingredients with dosage per litre when relevant. Use short paragraphs and bullet points. Do not invent schemes, prices, or guarantees.`
+            }. Give practical, concise, and direct agronomy guidance (maximum 3-5 short bullet points or under 150 words). Include exact fertilizer doses or chemical active ingredients with dosage per litre only when directly asked. Keep sentences short and clear so they are easy to read and listen to. Do not invent schemes, prices, or guarantees, and avoid long general introductory text.`
           }
         ]
       },
-      contents: [{ role: 'user', parts: [{ text: query }] }]
+      contents: [{ role: 'user', parts: [{ text: query }] }],
+      generationConfig: {
+        maxOutputTokens: 600,
+        temperature: 0.4
+      }
     },
     AI_TIMEOUT_MS
   );
@@ -983,13 +1004,15 @@ async function route(req, res, url) {
       } catch (error) {
         log('error', 'chat_live_failed', { error: error.message });
         const quotaExceeded = isGeminiQuotaError(error);
-        throw new HttpError(
-          503,
-          quotaExceeded
-            ? 'The AI service quota is temporarily exhausted. Please try again later.'
-            : 'The AI service is temporarily unavailable. Please try again later.',
-          quotaExceeded ? 'ai_quota_exceeded' : 'ai_unavailable'
-        );
+        // Fall back to local agronomy knowledge so the farmer still receives a helpful response
+        return sendJson(req, res, 200, {
+          success: true,
+          reply: answerAgronomyQueryOffline(query, lang),
+          live: false,
+          mode: 'degraded',
+          source: 'local-knowledge',
+          reason: quotaExceeded ? 'quota_exhausted' : 'live_failed'
+        });
       }
     }
 
@@ -1066,7 +1089,8 @@ async function route(req, res, url) {
     }
 
     const body = await readJsonBody(req);
-    const text = typeof body.text === 'string' ? body.text.trim() : '';
+    const rawText = typeof body.text === 'string' ? body.text.trim() : '';
+    const text = rawText.slice(0, TTS_MAX_CHARS);
     const lang = parseLanguage(body.lang);
     const requestedVoice = typeof body.voice === 'string' ? body.voice.trim() : '';
     const voice = /^[A-Za-z0-9_-]{1,64}$/.test(requestedVoice)
@@ -1075,13 +1099,6 @@ async function route(req, res, url) {
 
     if (!text) {
       throw new HttpError(400, 'Text is required', 'text_required');
-    }
-    if (text.length > TTS_MAX_CHARS) {
-      throw new HttpError(
-        413,
-        `Text must be ${TTS_MAX_CHARS} characters or fewer`,
-        'text_too_long'
-      );
     }
 
     const cacheKey = crypto
