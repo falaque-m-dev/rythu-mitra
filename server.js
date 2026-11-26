@@ -56,15 +56,15 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = NODE_ENV === 'production';
 const GEMINI_API_KEYS = collectGeminiApiKeys();
 const GEMINI_API_KEY = GEMINI_API_KEYS[0] || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-2.0-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.8-flash';
 const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES) || 12 * 1024 * 1024;
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000;
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX) || 60;
 const AI_RATE_LIMIT_MAX = Number(process.env.AI_RATE_LIMIT_MAX) || 10;
 const UPSTREAM_TIMEOUT_MS = Number(process.env.UPSTREAM_TIMEOUT_MS) || 8_000;
 const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS) || 45_000;
-const GEMINI_TTS_MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
+const GEMINI_TTS_MODEL = process.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts';
 const GEMINI_TTS_VOICE = process.env.GEMINI_TTS_VOICE || 'Kore';
 const DATA_GOV_IN_API_KEY = process.env.DATA_GOV_IN_API_KEY || '';
 const DATA_GOV_IN_SAMPLE_KEY = '579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b';
@@ -570,12 +570,9 @@ function isGeminiModelFallbackError(error) {
 async function callGeminiWithFallback(payload, timeoutMs) {
   const candidateModels = [
     GEMINI_MODEL,
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    GEMINI_FALLBACK_MODEL,
-    'gemini-2.5-flash-lite',
-    'gemini-1.5-flash-8b'
+    'gemini-3.5-flash-lite',
+    'gemini-3.8-flash',
+    GEMINI_FALLBACK_MODEL
   ].filter(Boolean);
   const models = [...new Set(candidateModels)];
   let lastError = null;
