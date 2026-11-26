@@ -89,12 +89,17 @@ export function AdvisorChat({ className, compact = false }: AdvisorChatProps) {
 
   const speak = useCallback(
     async (text: string) => {
-      if (!text || speaking || preparingAudio) return;
+      const cleanText = text
+        .replace(/[*#_`>~]/g, "")
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 800);
+      if (!cleanText || speaking || preparingAudio) return;
       const AudioCtor =
         window.AudioContext ||
         (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtor) {
-        toast.error(t("doctor.voiceUnavailable"));
         return;
       }
       audioContextRef.current ??= new AudioCtor();
@@ -102,7 +107,7 @@ export function AdvisorChat({ className, compact = false }: AdvisorChatProps) {
       if (context.state === "suspended") await context.resume();
       setPreparingAudio(true);
       try {
-        const blob = await synthesizeSpeech(text, locale);
+        const blob = await synthesizeSpeech(cleanText, locale);
         const buffer = await blob.arrayBuffer();
         const decoded = await context.decodeAudioData(buffer);
         const source = context.createBufferSource();
@@ -112,17 +117,13 @@ export function AdvisorChat({ className, compact = false }: AdvisorChatProps) {
         source.onended = () => setSpeaking(false);
         setSpeaking(true);
         source.start();
-      } catch (err) {
-        if (err instanceof ApiError && err.code === "tts_not_configured") {
-          toast.error(t("doctor.voiceUnavailable"));
-        } else {
-          toast.error(err instanceof ApiError ? err.message : t("doctor.audioFailed"));
-        }
+      } catch {
+        // Voice synthesis failure (e.g. background audio policy or quota) should not interrupt the chat
       } finally {
         setPreparingAudio(false);
       }
     },
-    [locale, preparingAudio, speaking, t]
+    [locale, preparingAudio, speaking]
   );
 
   useEffect(() => {
